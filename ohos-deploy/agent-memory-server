@@ -1,0 +1,20 @@
+unset PYTHONHOME PYTHONPATH
+export HOME="${HOME:-/data}"
+FLUSH="/data/harmonybrew/opt/openjiuwen/libexec/libriscvflush.so"
+[ -f "$FLUSH" ] && export LD_PRELOAD="$FLUSH${LD_PRELOAD:+:$LD_PRELOAD}"
+export TMPDIR="${TMPDIR:-/data/tmp}"
+[ -f /etc/ssl/certs/cacert.pem ] && export SSL_CERT_FILE="${SSL_CERT_FILE:-/etc/ssl/certs/cacert.pem}"
+mkdir -p "$HOME/ojw-run" 2>/dev/null; cd "$HOME/ojw-run" 2>/dev/null || cd "$HOME" 2>/dev/null || cd /data
+HERE="$(cd "$(dirname "$0")/.." && pwd)"
+OJW_BASE="/data/harmonybrew/opt/openjiuwen/libexec/site-packages"
+[ -d "$OJW_BASE" ] || OJW_BASE="${OJW_BASE/openjiuwen\//openjiuwen\/}" 
+export PYTHONPATH=""$HERE"/libexec/memory:"$HERE"/libexec:$OJW_BASE"
+# ohos-312-patch: vendor subroots + 3.12 site-packages first
+for _d in "$HERE"/libexec/src/*/ "$HERE"/libexec/src/*/*/; do
+  [ -d "$_d" ] && export PYTHONPATH="${_d%/}:$PYTHONPATH"
+done
+[ -d /data/python312/lib/python3.12/site-packages ] && export PYTHONPATH="/data/python312/lib/python3.12/site-packages:$PYTHONPATH"
+PY="/data/python312/bin/python3.12"
+[ -x "$PY" ] || PY="/data/harmonybrew/opt/python/bin/python3.11"
+[ -x "$PY" ] || PY="$(command -v python3.12 || command -v python3.11 || command -v python3)"
+exec "$PY" "$HERE/libexec/memory/start_memory_server.py" "$@"
